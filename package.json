@@ -1,14 +1,13 @@
 {
   "name": "bot-poker",
-  "version": "0.0.1",
-  "description": "A Node TypeScript Socket.io bot poker player",
+  "version": "0.1.0",
+  "description": "A Node TypeScript Socket bot poker player",
   "main": "dist/index.js",
   "dependencies": {
     "@types/es6-shim": "^0.31.35",
     "@types/express": "^4.11.1",
-    "@types/socket.io": "^1.4.36",
     "express": "^4.16.3",
-    "socket.io": "^2.1.1"
+    "net": "^1.0.2"
   },
   "devDependencies": {
     "typescript": "^3.0.1"
@@ -26,7 +25,7 @@
     "NodeJs",
     "Express",
     "TypeScript",
-    "Socket.io"
+    "Socket"
   ],
   "author": "ianaflous",
   "license": "MIT",

@@ -1,5 +1,5 @@
 # Bot Poker
-A bot poker player in NodeJS TypeScript Socket.io
+A bot poker player in NodeJS TypeScript TCP Socket
 
 Get Started
 -
@@ -9,12 +9,16 @@ Clone the project and run commands :
 
 `$ npm install`
 
-Running Server
+Running the application
 -
-To build the app : 
+### Build the app 
 `$ npm run build`
 
-To start the node server : 
+### Start the app
 `$ npm start`
 
-The `socket.io` server will be running on port 3000
+### Run a Socket communication
+Run the socket server in a other terminal
+
+ `$ node test/server-test.js`
+ 
