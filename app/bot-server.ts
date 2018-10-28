@@ -1,10 +1,9 @@
 import { createServer, Server } from 'http';
 import express from 'express';
 import * as net from 'net';
+
 import {Card} from "./models/card";
 import {CardValue} from "./models/cardvalue";
-
-import { CardStructure } from './structures/cardstructure';
 import { PlayerStructure } from './structures/playerstructure';
 
 export class BotServer {
@@ -18,18 +17,26 @@ export class BotServer {
     private socketIp: string;
     private client;
 
-    private id: number;
-    private chips: number;
-    private isDealer: boolean;
-    private turn: number;
-    private isRaisePreFlop: boolean;
-    private isRaisePostFlop: boolean;
-    private currentBet: number;
-    private myLastBet: number;
-    private blind: number;
+    private id: number=0;
+    private chips: number=0;
+    private isDealer: boolean=false;
+    private turn: number=0;
+    private isRaisePreFlop: boolean=false;
+    private isRaisePostFlop: boolean=false;
+    private currentBet: number=0;
+    private myLastBet: number=0;
+    private blind: number=0;
 
-    private myCards:CardStructure[];
-    private board:CardStructure[];
+    private myCards:Card[];
+    private board:Card[];
+
+    //indicateurs
+    private fold: number=0;
+    private raise: number=0;
+    private goodPreFlop: number=0;
+    private goodFlop: number=0;
+    private raisePreFlop: number=0;
+    private raisePostFlop: number=0;
 
     constructor() {
         this.createApp();
@@ -64,10 +71,10 @@ export class BotServer {
         });
         this.send('client.lobby.join', { name: 'Pickpoker' });
         this.client.on('data', (msgData) => {
-            console.log('brut : '+msgData+' fin');
+            //console.log('brut : '+msgData+' fin');
             const msgsJson = this.jsonMultiParse(msgData.toString());
             for (let msgJson of msgsJson) {
-                console.log('input : ' + msgJson + ' end');
+                //console.log('input : ' + msgJson + ' end');
                 switch (msgJson.id) {
                     case 'server.lobby.join.success':
                         this.onJoinSuccess();
@@ -100,7 +107,7 @@ export class BotServer {
                         this.onPlayerPlayFailure();
                         break;
                     default:
-                        console.log('msg not used : ' + msgJson.id);
+                        //console.log('msg not used : ' + msgJson.id);
                 }
             }
         });
@@ -138,8 +145,11 @@ export class BotServer {
         this.updateChips(data.players);
         if (this.id === data.dealer) {
             this.isDealer = true;
+        } else {
+            this.isDealer = false;
         }
-        console.log('my chips : '+this.chips);
+        console.log('chips : '+this.chips+' blind : '+this.blind+' raisePre : '+this.raisePreFlop+' raisePost : '+this.raisePostFlop+
+            ' fold : '+this.fold+' preflop '+this.goodPreFlop+' flop '+this.goodFlop);
     }
 
     private onPlayerCards(data) {
@@ -151,6 +161,7 @@ export class BotServer {
         this.id = data.info.id;
         this.chips = data.info.chips;
         console.log('Mon id : '+this.id);
+        this.newHand();
     }
 
     private onJoinSuccess() {
@@ -159,8 +170,8 @@ export class BotServer {
 
     public onTurnStart() {
         this.turn ++;
-        this.isRaisePreFlop = false;
-        this.isRaisePostFlop = false;
+        //this.isRaisePreFlop = false;
+        //this.isRaisePostFlop = false;
         this.currentBet = 0;
         this.myLastBet = 0
     }
@@ -199,27 +210,31 @@ export class BotServer {
         let raise = this.getRaise();
         if (this.turn === 1) {
             // PreFlop
-            /*if (this.blind >= (1/10)*this.chips) {
-                if (this.bonneMainPreFlop()) {
-                    this.currentBet = this.chips;
-                } else {
-                    this.currentBet = 0;
-                }
-                return;
-            }*/
-            if (raise > ((1/10)*this.chips)) {
-                this.currentBet = 0;
-            } else if (((this.isDealer && raise===0) || (this.bonneMainPreFlop())) && !this.isRaisePreFlop) {
-                this.currentBet =+ 3*this.blind;
-                this.isRaisePreFlop = true;
+            let goodHand = this.isPreFlopGoodHand(this.myCards);
+            if (goodHand) {
+                this.goodPreFlop++;
             }
-        } else {
-            //PostFlop
-            if (raise > ((1/10)*this.chips) || raise > (6*this.blind)) {
+            if (raise >= (3*this.blind) && this.chips >= (3*this.blind)) {
                 this.currentBet = 0;
-            } else if (((this.isDealer && raise===0) || raise <= this.blind) && !this.isRaisePostFlop) {
-                this.currentBet =+ 3*this.blind;
+                this.fold++;
+            } else if (raise <= this.blind && goodHand && this.chips > (2*this.blind) && !this.isRaisePreFlop) {
+                this.currentBet =+ this.blind;
+                this.isRaisePreFlop = true;
+                this.raisePreFlop++;
+            }
+        } else if (this.turn > 1) {
+            //PostFlops
+            let goodHand = this.isPostFlopGoodHand(this.myCards, this.board);
+            if (goodHand) {
+                this.goodFlop++;
+            }
+            if (raise >= (3*this.blind) || (raise > this.blind && !goodHand)) {
+                this.currentBet = 0;
+                this.fold++;
+            } else if (raise <= this.blind && goodHand && this.chips > (2*this.blind) && !this.isRaisePostFlop) {
+                this.currentBet =+ this.blind;
                 this.isRaisePostFlop = true;
+                this.raisePostFlop++;
             }
         }
         this.myLastBet = this.currentBet;
@@ -249,10 +264,6 @@ export class BotServer {
         this.turn = 0;
     }
 
-    public bonneMainPreFlop(): boolean {
-        return true;
-    }
-
     //////////////////////////////////////////
     //Test bonne main
     ///////////////////////////////////////
@@ -273,7 +284,7 @@ export class BotServer {
      * @param card
      * @returns {boolean}
      */
-    private getGoodHand(cardHand: Card[], card: Card[]): boolean {
+    private isPostFlopGoodHand(cardHand: Card[], card: Card[]): boolean {
 
         let pairPreFlop = false;
         let colorPreFlop = false;
@@ -376,7 +387,7 @@ export class BotServer {
      * @param card
      * @returns {boolean}
      */
-    private getGoodPreFlop(card: Card[]): boolean {
+    private isPreFlopGoodHand(card: Card[]): boolean {
 
         if(card[0].kind.number < CardValue.NINE.number || card[1].kind.number < CardValue.NINE.number) {
             if(card[0].kind.number != CardValue.ACE.number && card[1].kind.number != CardValue.ACE.number){
