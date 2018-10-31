@@ -5,6 +5,8 @@ import * as net from 'net';
 import {Card} from "./models/card";
 import {CardValue} from "./models/cardvalue";
 import { PlayerStructure } from './structures/playerstructure';
+import {CardKind} from "./models/cardkind";
+import {CardColor} from "./models/cardcolor";
 
 export class BotServer {
     public static readonly NODE_PORT:number = 3000;
@@ -121,7 +123,9 @@ export class BotServer {
     }
 
     private onBoardCards(data) {
-        this.board = data.cards;
+        for (let cardRecu of data.cards) {
+            this.board.push(new Card(CardKind.from(cardRecu.kind), CardColor.from(cardRecu.color)));
+        }
     }
 
     private onPlayerPlay() {
@@ -142,6 +146,8 @@ export class BotServer {
 
     private onHandStart(data) {
         this.newHand();
+        this.board = [];
+
         this.updateChips(data.players);
         if (this.id === data.dealer) {
             this.isDealer = true;
@@ -153,7 +159,10 @@ export class BotServer {
     }
 
     private onPlayerCards(data) {
-        this.myCards = data.cards;
+        this.myCards  = [];
+        for (let cardRecu of data.cards) {
+            this.myCards.push(new Card(CardKind.from(cardRecu.kind), CardColor.from(cardRecu.color)));
+        }
     }
 
     private onGameStart(data) {
@@ -211,6 +220,8 @@ export class BotServer {
         if (this.turn === 1) {
             // PreFlop
             let goodHand = this.isPreFlopGoodHand(this.myCards);
+
+          //  console.log("cartes : " + this.myCards[0].kind.value +"_"+ this.myCards[0].color.value + ' / '+ this.myCards[1].kind.value +"_"+ this.myCards[1].color.value + " : " + goodHand);
             if (goodHand) {
                 this.goodPreFlop++;
             }
@@ -225,6 +236,10 @@ export class BotServer {
         } else if (this.turn > 1) {
             //PostFlops
             let goodHand = this.isPostFlopGoodHand(this.myCards, this.board);
+            console.log("Hand : " );
+            console.log(this.myCards);
+            console.log("Board : " );
+            console.log(this.board);
             if (goodHand) {
                 this.goodFlop++;
             }
