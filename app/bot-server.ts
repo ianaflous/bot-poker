@@ -225,29 +225,33 @@ export class BotServer {
             if (goodHand) {
                 this.goodPreFlop++;
             }
-            if (raise >= (3*this.blind) && this.chips >= (3*this.blind)) {
+            if (raise > 6*this.blind && !goodHand) {
                 this.currentBet = 0;
                 this.fold++;
-            } else if (raise <= this.blind && goodHand && this.chips > (2*this.blind) && !this.isRaisePreFlop) {
-                this.currentBet =+ this.blind;
+                return;
+            }
+            if (goodHand && this.chips > (2*this.blind) && !this.isRaisePreFlop) {
+                this.currentBet =+ 2*this.blind;
                 this.isRaisePreFlop = true;
                 this.raisePreFlop++;
             }
         } else if (this.turn > 1) {
             //PostFlops
             let goodHand = this.isPostFlopGoodHand(this.myCards, this.board);
-            console.log("Hand : " );
-            console.log(this.myCards);
-            console.log("Board : " );
-            console.log(this.board);
+            //console.log("Hand : " );
+            //console.log(this.myCards);
+            //console.log("Board : " );
+            //console.log(this.board);
             if (goodHand) {
                 this.goodFlop++;
             }
-            if (raise >= (3*this.blind) || (raise > this.blind && !goodHand)) {
+            if ((raise > 3*this.blind && !goodHand)) {
                 this.currentBet = 0;
                 this.fold++;
-            } else if (raise <= this.blind && goodHand && this.chips > (2*this.blind) && !this.isRaisePostFlop) {
-                this.currentBet =+ this.blind;
+                return;
+            }
+            if (goodHand && this.chips > (2*this.blind) && !this.isRaisePostFlop) {
+                this.currentBet =+ 2*this.blind;
                 this.isRaisePostFlop = true;
                 this.raisePostFlop++;
             }
