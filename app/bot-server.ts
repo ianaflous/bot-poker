@@ -9,8 +9,7 @@ import {CardKind} from "./models/cardkind";
 import {CardColor} from "./models/cardcolor";
 
 export class BotServer {
-    public static readonly NODE_PORT:number = 3000;
-    public static readonly SOCKET_PORT:number = 1300;
+    public static readonly SOCKET_PORT:number = 4000;
     public static readonly SOCKET_IP:string = '127.0.0.1';
     private app: express.Application;
     private server: Server;
@@ -56,7 +55,7 @@ export class BotServer {
     }
 
     private config(): void {
-        this.nodePort = process.env.PORT || BotServer.NODE_PORT;
+        this.nodePort = process.env.PORT;
         this.socketIp = BotServer.SOCKET_IP;
         this.socketPort = BotServer.SOCKET_PORT;
     }
