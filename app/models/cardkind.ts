@@ -30,34 +30,34 @@ export class CardKind {
   }
 
   public static from(value: string): CardKind {
-    if (value === 'ACE') {
+    if (value === '1') {
       return CardKind.ACE;
     }
-    if (value === 'TWO') {
+    if (value === '2') {
       return CardKind.TWO;
     }
-    if (value === 'THREE') {
+    if (value === '3') {
       return CardKind.THREE;
     }
-    if (value === 'FOUR') {
+    if (value === '4') {
       return CardKind.FOUR;
     }
-    if (value === 'FIVE') {
+    if (value === '5') {
       return CardKind.FIVE;
     }
-    if (value === 'SIX') {
+    if (value === '6') {
       return CardKind.SIX;
     }
-    if (value === 'SEVEN') {
+    if (value === '7') {
       return CardKind.SEVEN;
     }
-    if (value === 'EIGHT') {
+    if (value === '8') {
       return CardKind.EIGHT;
     }
-    if (value === 'NINE') {
+    if (value === '9') {
       return CardKind.NINE;
     }
-    if (value === 'TEN') {
+    if (value === '10') {
       return CardKind.TEN;
     }
     if (value === 'JACK') {
@@ -70,7 +70,7 @@ export class CardKind {
       return CardKind.KING;
     }
 
-    return CardKind.ACE;
+    throw value;
   }
 
   public static values(): CardKind[] {

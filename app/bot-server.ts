@@ -5,11 +5,12 @@ import * as net from 'net';
 import {Card} from "./models/card";
 import {CardValue} from "./models/cardvalue";
 import { PlayerStructure } from './structures/playerstructure';
+import {CardKind} from "./models/cardkind";
+import {CardColor} from "./models/cardcolor";
 
 export class BotServer {
-    public static readonly NODE_PORT:number = 3000;
-    public static readonly SOCKET_PORT:number = 1300;
-    public static readonly SOCKET_IP:string = '127.0.0.1';
+    public static readonly SOCKET_PORT:number = 4000;
+    public static readonly SOCKET_IP:string = '192.168.0.10';
     private app: express.Application;
     private server: Server;
     private nodePort: string | number;
@@ -54,7 +55,7 @@ export class BotServer {
     }
 
     private config(): void {
-        this.nodePort = process.env.PORT || BotServer.NODE_PORT;
+        this.nodePort = process.env.PORT;
         this.socketIp = BotServer.SOCKET_IP;
         this.socketPort = BotServer.SOCKET_PORT;
     }
@@ -121,7 +122,9 @@ export class BotServer {
     }
 
     private onBoardCards(data) {
-        this.board = data.cards;
+        for (let cardRecu of data.cards) {
+            this.board.push(new Card(CardKind.from(cardRecu.kind), CardColor.from(cardRecu.color)));
+        }
     }
 
     private onPlayerPlay() {
@@ -142,6 +145,8 @@ export class BotServer {
 
     private onHandStart(data) {
         this.newHand();
+        this.board = [];
+
         this.updateChips(data.players);
         if (this.id === data.dealer) {
             this.isDealer = true;
@@ -153,7 +158,10 @@ export class BotServer {
     }
 
     private onPlayerCards(data) {
-        this.myCards = data.cards;
+        this.myCards  = [];
+        for (let cardRecu of data.cards) {
+            this.myCards.push(new Card(CardKind.from(cardRecu.kind), CardColor.from(cardRecu.color)));
+        }
     }
 
     private onGameStart(data) {
@@ -211,28 +219,38 @@ export class BotServer {
         if (this.turn === 1) {
             // PreFlop
             let goodHand = this.isPreFlopGoodHand(this.myCards);
+
+          //  console.log("cartes : " + this.myCards[0].kind.value +"_"+ this.myCards[0].color.value + ' / '+ this.myCards[1].kind.value +"_"+ this.myCards[1].color.value + " : " + goodHand);
             if (goodHand) {
                 this.goodPreFlop++;
             }
-            if (raise >= (3*this.blind) && this.chips >= (3*this.blind)) {
+            if (raise > 6*this.blind && !goodHand && raise > 0.3*this.chips) {
                 this.currentBet = 0;
                 this.fold++;
-            } else if (raise <= this.blind && goodHand && this.chips > (2*this.blind) && !this.isRaisePreFlop) {
-                this.currentBet =+ this.blind;
+                return;
+            }
+            if (goodHand && this.chips > (2*this.blind) && !this.isRaisePreFlop) {
+                this.currentBet =+ 2*this.blind;
                 this.isRaisePreFlop = true;
                 this.raisePreFlop++;
             }
         } else if (this.turn > 1) {
             //PostFlops
             let goodHand = this.isPostFlopGoodHand(this.myCards, this.board);
+            //console.log("Hand : " );
+            //console.log(this.myCards);
+            //console.log("Board : " );
+            //console.log(this.board);
             if (goodHand) {
                 this.goodFlop++;
             }
-            if (raise >= (3*this.blind) || (raise > this.blind && !goodHand)) {
+            if ((raise > 6*this.blind && !goodHand)) {
                 this.currentBet = 0;
                 this.fold++;
-            } else if (raise <= this.blind && goodHand && this.chips > (2*this.blind) && !this.isRaisePostFlop) {
-                this.currentBet =+ this.blind;
+                return;
+            }
+            if (goodHand && this.chips > (2*this.blind) && !this.isRaisePostFlop) {
+                this.currentBet =+ 2*this.blind;
                 this.isRaisePostFlop = true;
                 this.raisePostFlop++;
             }
