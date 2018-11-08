@@ -10,7 +10,7 @@ import {CardColor} from "./models/cardcolor";
 
 export class BotServer {
     public static readonly SOCKET_PORT:number = 4000;
-    public static readonly SOCKET_IP:string = '127.0.0.1';
+    public static readonly SOCKET_IP:string = '192.168.0.10';
     private app: express.Application;
     private server: Server;
     private nodePort: string | number;
@@ -224,7 +224,7 @@ export class BotServer {
             if (goodHand) {
                 this.goodPreFlop++;
             }
-            if (raise > 6*this.blind && !goodHand) {
+            if (raise > 6*this.blind && !goodHand && raise > 0.3*this.chips) {
                 this.currentBet = 0;
                 this.fold++;
                 return;
@@ -244,7 +244,7 @@ export class BotServer {
             if (goodHand) {
                 this.goodFlop++;
             }
-            if ((raise > 3*this.blind && !goodHand)) {
+            if ((raise > 6*this.blind && !goodHand)) {
                 this.currentBet = 0;
                 this.fold++;
                 return;
